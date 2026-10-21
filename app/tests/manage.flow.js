@@ -274,6 +274,22 @@ async function run() {
     });
     ok(done, '子分类没有移动到交通');
   });
+  await test('拖拽一级分类可以调整顺序', async () => {
+    const rows = Array.from(host.querySelectorAll('.cat-row.parent'));
+    ok(rows.length >= 3, '一级分类太少');
+    const before = rows.map((r) => r.dataset.cat);
+    const dragRow = rows[2];
+    const targetRow = rows[0];
+    const dt = new DataTransfer();
+    dragRow.dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: dt }));
+    const rect = targetRow.getBoundingClientRect();
+    const y = rect.top + 2;
+    targetRow.dispatchEvent(new DragEvent('dragover', { bubbles: true, dataTransfer: dt, clientY: y }));
+    targetRow.dispatchEvent(new DragEvent('drop', { bubbles: true, dataTransfer: dt, clientY: y }));
+    await sleep(400);
+    const after = Array.from(host.querySelectorAll('.cat-row.parent')).map((r) => r.dataset.cat);
+    eq(after[0], before[2], '被拖动的分类没有排到第一位');
+  });
 }
 function render() {
   const summary = document.getElementById('summary');
