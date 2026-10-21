@@ -56,10 +56,11 @@ async function run() {
   await store.load();
 
   const host = document.getElementById('host');
+  const gotoCalls = [];
   const ctx = {
     month: monthKey(),
     today: '',
-    goto() {},
+    goto(route, params) { gotoCalls.push({ route, params }); },
     setMonth() {},
     openQuickAdd() {}
   };
@@ -227,8 +228,48 @@ async function run() {
     const r = await api.getState();
     ok(r.data.transactions.some((t) => t.amount === 6600), '服务端没有更新');
   });
-}
 
+
+  await test('首页日历渲染整月天数', async () => {
+    const cells = host.querySelectorAll('.cal-cell:not(.blank)');
+    const now = new Date();
+    const days = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    eq(cells.length, days);
+  });
+
+  await test('今天格子显示当天支出', async () => {
+    const cell = host.querySelector('.cal-cell.today');
+    ok(cell, '没有今天的格子');
+    ok(/\d/.test(cell.textContent), '今天格子没有金额：' + cell.textContent);
+    ok(cell.classList.contains('has-data'), '今天格子未标记有数据');
+  });
+
+  await test('点日期打开当天收支明细', async () => {
+    const cell = host.querySelector('.cal-cell.has-data');
+    ok(cell, '找不到有数据的日期');
+    cell.click();
+    await sleep(200);
+    const m = document.querySelector('.modal');
+    ok(m, '当天明细弹窗未打开');
+    ok(m.textContent.includes('收支'), '弹窗标题不对：' + m.textContent.slice(0, 40));
+    const closeBtn = Array.from(m.querySelectorAll('button')).find((b) => b.textContent === '关闭');
+    if (closeBtn) closeBtn.click();
+  });
+
+  await test('日历“查看当天账单”跳转账单页', async () => {
+    const cell = host.querySelector('.cal-cell.today');
+    cell.click();
+    await sleep(200);
+    const m = document.querySelector('.modal');
+    const goBtn = Array.from(m.querySelectorAll('button')).find((b) => b.textContent === '查看当天账单');
+    ok(goBtn, '没有查看当天账单按钮');
+    goBtn.click();
+    await sleep(150);
+    const last = gotoCalls[gotoCalls.length - 1];
+    ok(last && last.route === 'bills', '没有跳转账单：' + JSON.stringify(last));
+    ok(last.params && last.params.date, '没有带上日期参数');
+  });
+}
 function render() {
   const summary = document.getElementById('summary');
   summary.textContent = 'FLOW PASS ' + passed + ' / FAIL ' + failed;

@@ -3,6 +3,7 @@ import * as U from '../js/utils.js';
 import * as S from '../js/selectors.js';
 import { validateEntry, makeTransaction, applyTransaction, validateBackup } from '../js/models.js';
 import { computePie, arcPath, niceMax, buildLinePoints } from '../js/charts.js';
+import { reorderWithinSiblings, moveToParent } from '../js/categoryOrder.js';
 
 const list = [];
 let passed = 0;
@@ -311,6 +312,60 @@ test('hidden 属性真实生效（不再被 display 覆盖）', () => {
   });
 });
 
+
+// ---------------- 分类排序 / 日历 ----------------
+const catFixture = [
+  { id: 'c1', name: '餐饮', kind: 'expense', parentId: null, order: 1 },
+  { id: 'c2', name: '交通', kind: 'expense', parentId: null, order: 2 },
+  { id: 'c3', name: '购物', kind: 'expense', parentId: null, order: 3 },
+  { id: 'c1-1', name: '午饭', kind: 'expense', parentId: 'c1', order: 4 },
+  { id: 'c1-2', name: '晚饭', kind: 'expense', parentId: 'c1', order: 5 }
+];
+
+test('分类排序：拖到目标前面', () => {
+  const out = reorderWithinSiblings(catFixture, 'c3', 'c1', false);
+  const tops = out.filter((c) => !c.parentId).sort((a, b) => a.order - b.order).map((c) => c.id);
+  eq(tops, ['c3', 'c1', 'c2']);
+  eq(catFixture[0].order, 1, '原始数据不应被修改');
+});
+
+test('分类排序：拖到目标后面', () => {
+  const out = reorderWithinSiblings(catFixture, 'c1', 'c3', true);
+  const tops = out.filter((c) => !c.parentId).sort((a, b) => a.order - b.order).map((c) => c.id);
+  eq(tops, ['c2', 'c3', 'c1']);
+});
+
+test('分类排序：同父级内调整', () => {
+  const out = reorderWithinSiblings(catFixture, 'c1-2', 'c1-1', false);
+  const kids = out.filter((c) => c.parentId === 'c1').sort((a, b) => a.order - b.order).map((c) => c.id);
+  eq(kids, ['c1-2', 'c1-1']);
+});
+
+test('分类排序：跨级不处理', () => {
+  const out = reorderWithinSiblings(catFixture, 'c1-1', 'c2', true);
+  eq(out.map((c) => c.id + ':' + c.order), catFixture.map((c) => c.id + ':' + c.order));
+});
+
+test('分类换父级：子分类移到另一个大类', () => {
+  const out = moveToParent(catFixture, 'c1-1', 'c2');
+  eq(out.find((c) => c.id === 'c1-1').parentId, 'c2');
+  eq(catFixture[3].parentId, 'c1', '原始数据不应被修改');
+});
+
+test('分类换父级：不允许挂到子分类下', () => {
+  const out = moveToParent(catFixture, 'c2', 'c1-1');
+  eq(out.find((c) => c.id === 'c2').parentId, null);
+});
+
+test('每日收支汇总：每天分开统计', () => {
+  const d = S.dailySummary(fixture, '2026-10');
+  eq(d.length, 31);
+  eq(d[0].income, 800000, '10 月 1 日收入');
+  eq(d[17].expense, 2800, '10 月 18 日支出');
+  eq(d[16].expense, 620, '10 月 17 日支出');
+  eq(d[4].expense, 0, '转账不计入');
+  eq(d[17].count, 1);
+});
 // ---------------- 输出 ----------------
 const summary = document.getElementById('summary');
 summary.textContent = 'PASS ' + passed + ' / FAIL ' + failed;

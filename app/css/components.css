@@ -1068,3 +1068,56 @@ textarea.input {
 
 /* ---------- 修正：卡片外的说明文字在深色背景上要用浅色 ---------- */
 .cat-card + .card-sub { color: rgba(255, 255, 255, .62); }
+
+/* ---------- 首页日历 ---------- */
+.calendar-card { margin-top: 18px; }
+.cal-weekdays, .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.cal-weekdays { margin-bottom: 6px; }
+.cal-weekdays span { text-align: center; font-size: 11px; color: var(--muted); letter-spacing: .08em; }
+
+.cal-cell {
+  min-height: 70px;
+  border-radius: 14px;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, .30);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 7px 9px;
+  font-variant-numeric: tabular-nums;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.cal-cell.blank { background: transparent; pointer-events: none; border-color: transparent; }
+.cal-cell.has-data { background: rgba(255, 255, 255, .62); border-color: rgba(15, 23, 42, .06); }
+.cal-cell:hover { background: rgba(255, 255, 255, .92); border-color: rgba(47, 128, 237, .35); }
+.cal-cell.today { border-color: rgba(47, 128, 237, .6); box-shadow: 0 0 0 3px rgba(47, 128, 237, .14); }
+.cal-num { font-size: 12px; color: var(--text-2); font-weight: 500; }
+.cal-exp { font-size: 11px; color: var(--expense); }
+.cal-inc { font-size: 11px; color: var(--income); }
+
+/* ---------- 分类拖拽 ---------- */
+.drag-handle {
+  width: 18px;
+  text-align: center;
+  color: rgba(15, 23, 42, .26);
+  cursor: grab;
+  font-size: 11px;
+  letter-spacing: -1px;
+  user-select: none;
+}
+.drag-handle:active { cursor: grabbing; }
+.cat-row.dragging { opacity: .45; }
+.cat-row.drop-before { box-shadow: inset 0 2px 0 var(--primary); }
+.cat-row.drop-after { box-shadow: inset 0 -2px 0 var(--primary); }
+.cat-row.drop-into {
+  background: rgba(47, 128, 237, .14);
+  border-radius: 10px;
+  outline: 1px dashed rgba(47, 128, 237, .55);
+  outline-offset: -2px;
+}
+
+/* ---------- 日历/拖拽微调 ---------- */
+.cal-grid { grid-auto-rows: 74px; }
+.drag-handle { color: rgba(15, 23, 42, .34); }
+.drag-handle:hover { color: rgba(15, 23, 42, .62); }

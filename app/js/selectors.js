@@ -279,3 +279,20 @@ export function hasAnyData(state) {
 }
 
 export { todayStr };
+
+/** 每日收支汇总（用于首页日历），返回整月每一天的金额。 */
+export function dailySummary(state, month) {
+  const days = daysInMonth(month);
+  const out = [];
+  for (let i = 1; i <= days; i++) out.push({ day: i, expense: 0, income: 0, count: 0 });
+  (state.transactions || []).forEach((t) => {
+    if (monthOfDate(t.date) !== month) return;
+    const d = Number(String(t.date).slice(8, 10));
+    if (!(d >= 1 && d <= days)) return;
+    const cell = out[d - 1];
+    if (t.kind === 'expense') cell.expense += Number(t.amount) || 0;
+    else if (t.kind === 'income') cell.income += Number(t.amount) || 0;
+    cell.count++;
+  });
+  return out;
+}

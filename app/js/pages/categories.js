@@ -2,6 +2,7 @@ import { el, openModal, confirmDialog, toast, emptyBlock } from '../components.j
 import { store } from '../store.js';
 import { topCategories, childrenOf, countTxByCategory, categoryMap } from '../selectors.js';
 import { uid } from '../utils.js';
+import { reorderWithinSiblings, moveToParent } from '../categoryOrder.js';
 
 export const title = '分类';
 
@@ -157,6 +158,16 @@ export function mount(root, ctx) {
     const nameInput = el('input', { class: 'input', maxlength: '12', placeholder: '分类名称' });
     nameInput.value = cat ? cat.name : '';
 
+    const currentParentId = cat ? (cat.parentId || null) : (parent ? parent.id : null);
+    const parentSelect = el('select', { class: 'select', 'aria-label': '所属一级分类' });
+    if (isChild) {
+      topCategories(state(), base.kind).forEach((p) => {
+        const opt = el('option', { value: p.id }, p.name);
+        if (p.id === currentParentId) opt.selected = true;
+        parentSelect.append(opt);
+      });
+    }
+
     const iconGrid = el('div', { class: 'icon-grid' });
     ICONS.forEach((ic) => {
       const b = el('button', { type: 'button', class: 'icon-pick' + (ic === icon ? ' active' : '') }, ic);
@@ -184,6 +195,7 @@ export function mount(root, ctx) {
       width: 480,
       body: el('div', { class: 'stack' },
         el('div', { class: 'field' }, el('label', { class: 'field-label' }, '名称 *'), nameInput),
+        isChild ? el('div', { class: 'field' }, el('label', { class: 'field-label' }, '所属一级分类'), parentSelect) : null,
         el('div', { class: 'field' }, el('label', { class: 'field-label' }, '图标'), iconGrid),
         el('div', { class: 'field' }, el('label', { class: 'field-label' }, '颜色'), colorGrid),
         err
@@ -195,8 +207,9 @@ export function mount(root, ctx) {
           onclick: async () => {
             const name = nameInput.value.trim();
             if (!name) { err.textContent = '请输入分类名称'; return; }
+            const targetParentId = isChild && parentSelect.value ? parentSelect.value : (base.parentId || null);
             const dup = state().categories.some((c) => c.kind === base.kind
-              && (c.parentId || null) === (base.parentId || null)
+              && (c.parentId || null) === targetParentId
               && c.name === name && (!cat || c.id !== cat.id));
             if (dup) { err.textContent = '同级下已有同名分类'; return; }
 
@@ -217,10 +230,18 @@ export function mount(root, ctx) {
               if (okAdd) m.close();
             } else {
               const okEdit = await commit((s) => {
-                const c = s.categories.find((x) => x.id === cat.id);
+                let c = s.categories.find((x) => x.id === cat.id);
                 c.name = name;
                 c.icon = icon;
                 c.color = color;
+                // 子分类可以换到另一个大类下
+                if (isChild && parentSelect.value && parentSelect.value !== c.parentId) {
+                  s.categories = moveToParent(s.categories, c.id, parentSelect.value);
+                  c = s.categories.find((x) => x.id === cat.id);
+                  c.name = name;
+                  c.icon = icon;
+                  c.color = color;
+                }
               }, '已保存');
               if (okEdit) m.close();
             }
@@ -230,6 +251,77 @@ export function mount(root, ctx) {
     });
     setTimeout(() => nameInput.focus(), 50);
   }
+
+  // ---------------- 拖拽排序 / 换大类 ----------------
+  let dragId = null;
+
+  function clearDropMarks() {
+    listWrap.querySelectorAll('.cat-row').forEach((r) => {
+      r.classList.remove('drop-before', 'drop-after', 'drop-into');
+    });
+  }
+
+  listWrap.addEventListener('dragstart', (e) => {
+    const row = e.target.closest('.cat-row');
+    if (!row) return;
+    dragId = row.dataset.cat;
+    row.classList.add('dragging');
+    try {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', dragId);
+    } catch (err) { /* 某些环境不支持 */ }
+  });
+
+  listWrap.addEventListener('dragend', () => {
+    dragId = null;
+    clearDropMarks();
+    listWrap.querySelectorAll('.cat-row').forEach((r) => r.classList.remove('dragging'));
+  });
+
+  listWrap.addEventListener('dragover', (e) => {
+    const row = e.target.closest('.cat-row');
+    if (!row || !dragId || row.dataset.cat === dragId) return;
+    const dragCat = state().categories.find((c) => c.id === dragId);
+    const targetCat = state().categories.find((c) => c.id === row.dataset.cat);
+    if (!dragCat || !targetCat) return;
+    e.preventDefault();
+    clearDropMarks();
+    if (row.classList.contains('parent') && dragCat.parentId) {
+      row.classList.add('drop-into');
+    } else if ((dragCat.parentId || null) === (targetCat.parentId || null)) {
+      const rect = row.getBoundingClientRect();
+      row.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drop-before' : 'drop-after');
+    }
+  });
+
+  listWrap.addEventListener('dragleave', (e) => {
+    if (!listWrap.contains(e.relatedTarget)) clearDropMarks();
+  });
+
+  listWrap.addEventListener('drop', async (e) => {
+    const row = e.target.closest('.cat-row');
+    if (!row || !dragId) return;
+    e.preventDefault();
+    const targetId = row.dataset.cat;
+    const dragCat = state().categories.find((c) => c.id === dragId);
+    const targetCat = state().categories.find((c) => c.id === targetId);
+    const rect = row.getBoundingClientRect();
+    const placeAfter = e.clientY >= rect.top + rect.height / 2;
+    clearDropMarks();
+    if (!dragCat || !targetCat || dragId === targetId) { dragId = null; return; }
+
+    if (row.classList.contains('parent') && dragCat.parentId) {
+      const moved = await commit((s) => {
+        s.categories = moveToParent(s.categories, dragId, targetId);
+      }, '已移动到「' + targetCat.name + '」');
+      if (moved) expanded.add(targetId);
+    } else if ((dragCat.parentId || null) === (targetCat.parentId || null)) {
+      await commit((s) => {
+        s.categories = reorderWithinSiblings(s.categories, dragId, targetId, placeAfter);
+      }, '已调整顺序');
+    }
+    dragId = null;
+  });
 
   function render() {
     tabExpense.classList.toggle('active', kind === 'expense');
@@ -256,7 +348,13 @@ export function mount(root, ctx) {
       const isOpen = expanded.has(p.id);
       const used = (counts[p.id] || 0) + kids.reduce((n, k) => n + (counts[k.id] || 0), 0);
 
-      const row = el('div', { class: 'cat-row parent' + (p.archived ? ' archived' : ''), 'data-cat': p.id },
+      const row = el('div', {
+        class: 'cat-row parent' + (p.archived ? ' archived' : ''),
+        'data-cat': p.id,
+        'data-parent': '',
+        draggable: 'true'
+      },
+        el('span', { class: 'drag-handle', title: '拖动调整顺序', 'aria-hidden': 'true' }, '⋮⋮'),
         el('button', {
           class: 'cat-expand', type: 'button', 'aria-label': isOpen ? '收起' : '展开',
           onclick: () => { if (isOpen) expanded.delete(p.id); else expanded.add(p.id); render(); }
@@ -285,7 +383,13 @@ export function mount(root, ctx) {
 
       if (isOpen) {
         kids.forEach((k) => {
-          const childRow = el('div', { class: 'cat-row child' + (k.archived ? ' archived' : ''), 'data-cat': k.id },
+          const childRow = el('div', {
+            class: 'cat-row child' + (k.archived ? ' archived' : ''),
+            'data-cat': k.id,
+            'data-parent': p.id,
+            draggable: 'true'
+          },
+            el('span', { class: 'drag-handle', title: '拖动可排序或换大类', 'aria-hidden': 'true' }, '⋮⋮'),
             el('span', { class: 'cat-expand' }),
             el('span', { class: 'cat-ico', style: 'color:' + (k.color || p.color || '#666'), text: k.icon || p.icon || '📦' }),
             el('span', { class: 'cat-name' }, k.name, k.archived ? el('span', { class: 'chip chip-mini', text: '已停用' }) : null),

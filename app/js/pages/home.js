@@ -1,11 +1,11 @@
-import { el } from '../components.js';
+import { el, openModal } from '../components.js';
 import { store } from '../store.js';
 import { createEntryForm, openEditTransaction } from '../quickadd.js';
 import {
   activeAccounts, accountBalances, monthSummary, daySummary, recentTx,
-  budgetUsage, categoryMap, accountMap
+  budgetUsage, categoryMap, accountMap, dailySummary
 } from '../selectors.js';
-import { fmtMoney, fmtSigned, todayStr, monthLabel, escapeHtml } from '../utils.js';
+import { fmtMoney, fmtSigned, todayStr, monthLabel, escapeHtml, pad2, dateLabel } from '../utils.js';
 
 export const title = '首页';
 
@@ -18,13 +18,15 @@ export function mount(root, ctx) {
   );
   const overviewEl = el('div', { class: 'card' });
   const recentEl = el('div', { class: 'card', style: 'margin-top:16px' });
+  const calendarEl = el('div', { class: 'card calendar-card' });
 
   page.append(
     accountsEl,
     el('div', { class: 'grid-2' },
       formCard,
       el('div', {}, overviewEl, recentEl)
-    )
+    ),
+    calendarEl
   );
   root.append(page);
 
@@ -158,10 +160,101 @@ export function mount(root, ctx) {
     recentEl.append(wrap);
   }
 
+  // ---------------- 日历 ----------------
+  function openDayDetail(day) {
+    const dateStr = ctx.month + '-' + pad2(day);
+    const st = store.state;
+    const cMap = categoryMap(st);
+    const aMap = accountMap(st);
+    const list = st.transactions
+      .filter((t) => t.date === dateStr)
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+
+    const body = el('div', {});
+    if (!list.length) {
+      body.append(el('div', { class: 'empty', style: 'padding:24px' },
+        el('div', { class: 'empty-ico', text: '🗒️' }),
+        el('p', { text: '这天还没有记账' })
+      ));
+    } else {
+      const rows = el('div', { class: 'list' });
+      list.forEach((t) => {
+        const c = cMap[t.categoryId];
+        const parent = c && c.parentId ? cMap[c.parentId] : null;
+        const transfer = t.kind === 'transfer';
+        const icon = transfer ? '🔄' : ((c && c.icon) || (parent && parent.icon) || '📦');
+        const label = transfer ? '转账' : (c ? c.name : '未分类');
+        const acc = aMap[t.accountId];
+        const row = el('button', { class: 'list-row list-row-btn', type: 'button' },
+          el('span', { class: 'row-ico', text: icon }),
+          el('span', { class: 'row-main' },
+            el('span', { class: 'row-title', text: label + (t.note ? ' · ' + t.note : '') }),
+            el('span', { class: 'row-sub', text: (acc ? acc.name : '') })
+          ),
+          el('span', {
+            class: 'row-amount ' + (transfer ? 'muted' : t.kind === 'income' ? 'text-income' : 'text-expense'),
+            text: transfer ? fmtMoney(t.amount) : fmtSigned(t.amount, t.kind)
+          })
+        );
+        row.addEventListener('click', () => { modal.close(); openEditTransaction(t); });
+        rows.append(row);
+      });
+      body.append(rows);
+    }
+
+    const modal = openModal({
+      title: dateLabel(dateStr) + ' 收支',
+      width: 480,
+      body,
+      footer: [
+        el('button', { class: 'btn', type: 'button', onclick: () => modal.close() }, '关闭'),
+        el('button', {
+          class: 'btn btn-primary', type: 'button',
+          onclick: () => { modal.close(); ctx.goto('bills', { date: dateStr }); }
+        }, '查看当天账单')
+      ]
+    });
+  }
+
+  function renderCalendar() {
+    const st = store.state;
+    const month = ctx.month;
+    const daily = dailySummary(st, month);
+    const parts = month.split('-').map(Number);
+    const offset = (new Date(parts[0], parts[1] - 1, 1).getDay() + 6) % 7; // 周一作为一周起点
+    const today = todayStr();
+
+    calendarEl.innerHTML = '';
+    calendarEl.append(el('div', { class: 'card-head' },
+      el('div', { class: 'card-title', text: monthLabel(month) + ' 日历' }),
+      el('span', { class: 'card-sub', text: '点某一天查看当天收支' })
+    ));
+
+    const week = el('div', { class: 'cal-weekdays' });
+    ['一', '二', '三', '四', '五', '六', '日'].forEach((w) => week.append(el('span', { text: w })));
+
+    const grid = el('div', { class: 'cal-grid' });
+    for (let i = 0; i < offset; i++) grid.append(el('div', { class: 'cal-cell blank' }));
+    daily.forEach((d) => {
+      const dateStr = month + '-' + pad2(d.day);
+      const cell = el('button', {
+        class: 'cal-cell' + (dateStr === today ? ' today' : '') + (d.count ? ' has-data' : ''),
+        type: 'button',
+        'data-day': String(d.day),
+        'aria-label': dateStr
+      }, el('span', { class: 'cal-num', text: String(d.day) }));
+      if (d.expense > 0) cell.append(el('span', { class: 'cal-exp', text: '-' + fmtMoney(d.expense).replace('¥', '') }));
+      if (d.income > 0) cell.append(el('span', { class: 'cal-inc', text: '+' + fmtMoney(d.income).replace('¥', '') }));
+      cell.addEventListener('click', () => openDayDetail(d.day));
+      grid.append(cell);
+    });
+    calendarEl.append(week, grid);
+  }
   function refresh() {
     renderAccounts();
     renderOverview();
     renderRecent();
+    renderCalendar();
   }
 
   refresh();

@@ -242,8 +242,39 @@ async function run() {
     const done = await waitFor(() => !store.state.tags.some((t) => t.name === '改过的标签'));
     ok(done, '标签未删除');
   });
-}
 
+
+  await test('子分类可在编辑时更换一级分类', async () => {
+    // 新建 宠物 > 猫砂
+    findButton(rowByText(host, '.cat-row', '宠物'), '加子类').click();
+    await sleep(120);
+    modal().querySelector('input.input').value = '猫砂';
+    findButton(modal(), '创建').click();
+    const created = await waitFor(() => store.state.categories.some((c) => c.name === '猫砂'));
+    ok(created, '子分类未创建');
+
+    if (!rowByText(host, '.cat-row.child', '猫砂')) {
+      rowByText(host, '.cat-row', '宠物').querySelector('.cat-expand').click();
+      await sleep(120);
+    }
+    const childRow = rowByText(host, '.cat-row.child', '猫砂');
+    ok(childRow, '找不到猫砂行');
+    findButton(childRow, '编辑').click();
+    await sleep(150);
+
+    const m = modal();
+    const sel = m.querySelector('select[aria-label="所属一级分类"]');
+    ok(sel, '编辑弹窗里没有“所属一级分类”选择');
+    sel.value = 'c2'; // 交通
+    findButton(m, '保存').click();
+
+    const done = await waitFor(() => {
+      const c = store.state.categories.find((x) => x.name === '猫砂');
+      return c && c.parentId === 'c2';
+    });
+    ok(done, '子分类没有移动到交通');
+  });
+}
 function render() {
   const summary = document.getElementById('summary');
   summary.textContent = 'MANAGE PASS ' + passed + ' / FAIL ' + failed;
