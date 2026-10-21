@@ -1,0 +1,69 @@
+:root {
+  --primary: #2f80ed;
+  --primary-dark: #1f66c9;
+  --primary-soft: #e8f1fe;
+  --expense: #e5484d;
+  --expense-soft: #fdecec;
+  --income: #1a9c62;
+  --income-soft: #e6f6ee;
+  --warn: #d97706;
+  --warn-soft: #fef3c7;
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --text: #1f2329;
+  --text-2: #4b5563;
+  --muted: #8a94a6;
+  --border: #e6e9ef;
+  --border-strong: #d5dae3;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 4px 12px rgba(16, 24, 40, .04);
+  --shadow-lg: 0 12px 32px rgba(16, 24, 40, .16);
+  --sidebar-w: 200px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, p { margin: 0; }
+
+a { color: var(--primary); text-decoration: none; }
+
+button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+
+button { cursor: pointer; }
+
+code {
+  background: #eef1f6;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.muted { color: var(--muted); }
+.text-expense { color: var(--expense); }
+.text-income { color: var(--income); }
+.num { font-variant-numeric: tabular-nums; }
+.hidden { display: none !important; }
+.spacer { flex: 1; }
+.row { display: flex; align-items: center; gap: 8px; }
+.row-between { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+
+/* 关键：作者样式里的 display 会覆盖浏览器对 hidden 属性的默认隐藏，
+   这里统一兜底，保证 el.hidden = true 一定真的不可见 */
+[hidden] { display: none !important; }
