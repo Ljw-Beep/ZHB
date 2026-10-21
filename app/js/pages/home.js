@@ -132,11 +132,12 @@ export function mount(root, ctx) {
     const wrap = el('div', { class: 'list' });
     list.forEach(t => {
       const c = cMap[t.categoryId];
+      const parentCat = c && c.parentId ? cMap[c.parentId] : null;
       const acc = aMap[t.accountId];
       const transfer = t.kind === 'transfer';
       const toAcc = aMap[t.toAccountId];
       const label = transfer ? '转账' : (c ? c.name : '未分类');
-      const icon = transfer ? '🔄' : (c && c.icon ? c.icon : '📦');
+      const icon = transfer ? '🔄' : ((c && c.icon) || (parentCat && parentCat.icon) || '📦');
       const amountText = transfer ? fmtMoney(t.amount) : fmtSigned(t.amount, t.kind);
       const right = transfer ? 'text-muted' : (t.kind === 'income' ? 'text-income' : 'text-expense');
 

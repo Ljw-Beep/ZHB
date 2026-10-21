@@ -258,11 +258,12 @@ export function mount(root, ctx) {
       const box = el('div', { class: 'card bill-group-card' });
       items.forEach((t) => {
         const c = cMap[t.categoryId];
+        const parentCat = c && c.parentId ? cMap[c.parentId] : null;
         const account = aMap[t.accountId];
         const toAccount = aMap[t.toAccountId];
         const transfer = t.kind === 'transfer';
         const rowLabel = transfer ? '转账' : (c ? c.name : '未分类');
-        const icon = transfer ? '🔄' : (c && c.icon ? c.icon : '📦');
+        const icon = transfer ? '🔄' : ((c && c.icon) || (parentCat && parentCat.icon) || '📦');
         const amountText = transfer ? fmtMoney(t.amount) : fmtSigned(t.amount, t.kind);
         const amountClass = transfer ? 'muted' : (t.kind === 'income' ? 'text-income' : 'text-expense');
         const tagNames = (t.tagIds || []).map((id) => {

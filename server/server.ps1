@@ -555,15 +555,30 @@ function Test-ExistingServer([int]$p) {
   } catch { return $false }
 }
 
-$existing = 0
-for ($p = $Port; $p -le ($Port + 9); $p++) {
-  if (Test-ExistingServer $p) { $existing = $p; break }
-}
+# 单实例守卫：用命名互斥体，避免两次启动各占一个端口、同时写同一份数据
+# 互斥体名字带上数据目录指纹：同一份数据只允许一个服务，不同数据目录（如测试）互不影响
+$dataKey = [IO.Path]::GetFullPath($DataDir).TrimEnd('\').ToLowerInvariant()
+$md5 = [Security.Cryptography.MD5]::Create()
+$hashBytes = $md5.ComputeHash([Text.Encoding]::UTF8.GetBytes($dataKey))
+$mutexName = 'LedgerApp.' + ([BitConverter]::ToString($hashBytes) -replace '-', '').Substring(0, 16)
+$script:instanceMutex = New-Object System.Threading.Mutex($false, $mutexName)
+$isFirstInstance = $false
+try { $isFirstInstance = $script:instanceMutex.WaitOne(0) } catch { $isFirstInstance = $false }
 
-if ($existing -gt 0) {
-  $url = "http://127.0.0.1:$existing/"
-  Write-Host "记账服务已在运行：$url" -ForegroundColor Green
-  if (-not $NoBrowser) { Start-Process $url }
+if (-not $isFirstInstance) {
+  # 已有实例在跑：等它就绪后打开浏览器
+  for ($i = 0; $i -lt 40; $i++) {
+    for ($p = $Port; $p -le ($Port + 9); $p++) {
+      if (Test-ExistingServer $p) {
+        $url = "http://127.0.0.1:$p/"
+        Write-Host "记账服务已在运行：$url" -ForegroundColor Green
+        if (-not $NoBrowser) { Start-Process $url }
+        exit 0
+      }
+    }
+    Start-Sleep -Milliseconds 250
+  }
+  Write-Host "检测到已有实例，但暂时无法连接，请稍后重试。" -ForegroundColor Yellow
   exit 0
 }
 

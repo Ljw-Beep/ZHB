@@ -743,3 +743,328 @@ textarea.input {
   padding: 6px 10px;
   border-radius: var(--radius-sm);
 }
+
+/* =====================================================================
+   玻璃拟态主题（纯视觉层，覆盖在既有布局规则之上，不改结构与类名）
+   ===================================================================== */
+
+/* ---------- 卡片 ---------- */
+.card {
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px 24px;
+}
+.card + .card { margin-top: 18px; }
+.card-head { margin-bottom: 16px; }
+.card-title { font-size: 14.5px; font-weight: 600; letter-spacing: .1px; }
+.card-sub { color: var(--muted); font-size: 12px; }
+
+/* ---------- 按钮 ---------- */
+.btn {
+  border-radius: 13px;
+  border: 1px solid rgba(15, 23, 42, .10);
+  background: rgba(255, 255, 255, .68);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .75);
+  padding: 8px 15px;
+  font-weight: 500;
+  transition: background .16s ease, box-shadow .16s ease, transform .12s ease;
+}
+.btn:hover { background: rgba(255, 255, 255, .92); box-shadow: inset 0 1px 0 #fff, 0 6px 16px rgba(2, 8, 23, .10); }
+.btn-primary {
+  background: linear-gradient(135deg, #54b0ff 0%, var(--primary) 100%);
+  border-color: rgba(47, 128, 237, .45);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(47, 128, 237, .32), inset 0 1px 0 rgba(255, 255, 255, .38);
+}
+.btn-primary:hover { filter: brightness(1.06); }
+.btn-danger {
+  color: #b33a12;
+  border-color: rgba(212, 83, 31, .26);
+  background: rgba(255, 255, 255, .72);
+}
+.btn-danger:hover { background: var(--expense-soft); }
+.btn-ghost { background: transparent; border-color: transparent; box-shadow: none; }
+.btn-ghost:hover { background: rgba(15, 23, 42, .06); box-shadow: none; }
+.btn-sm { border-radius: 10px; }
+.btn-lg { border-radius: 15px; }
+
+/* ---------- 表单 ---------- */
+.input, .select, textarea.input {
+  border-radius: 13px;
+  border: 1px solid rgba(15, 23, 42, .12);
+  background: rgba(255, 255, 255, .64);
+  padding: 9px 12px;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, .04);
+  transition: border-color .16s, box-shadow .16s, background .16s;
+}
+.input:focus, .select:focus {
+  border-color: rgba(47, 128, 237, .55);
+  box-shadow: 0 0 0 4px rgba(47, 128, 237, .14);
+  background: rgba(255, 255, 255, .92);
+}
+.field-label { font-size: 12px; color: var(--text-2); letter-spacing: .02em; }
+.form-error { color: var(--expense); }
+.form-hint {
+  color: #8a4b06;
+  background: rgba(245, 158, 11, .14);
+  border: 1px solid rgba(245, 158, 11, .22);
+  border-radius: 12px;
+}
+
+/* 金额输入：轻量大号数字 */
+.money-input { border-bottom: 1px solid rgba(15, 23, 42, .14); padding: 6px 2px 10px; }
+.money-input:focus-within { border-color: var(--primary); }
+.money-symbol { font-size: 22px; font-weight: 400; color: var(--muted); }
+.money-input input { font-size: 40px; font-weight: 300; letter-spacing: -1.6px; }
+.money-input input::placeholder { color: rgba(15, 23, 42, .18); }
+
+/* ---------- 标签 chip ---------- */
+.chip {
+  background: rgba(15, 23, 42, .055);
+  border-radius: 999px;
+  font-weight: 500;
+  padding: 3px 10px;
+}
+.chip-soft { background: rgba(47, 128, 237, .14); color: #1f66c9; }
+.chip-lg {
+  background: rgba(255, 255, 255, .72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), 0 2px 8px rgba(2, 8, 23, .06);
+}
+.chip-mini { background: rgba(15, 23, 42, .05); }
+
+/* ---------- 分类磁贴 ---------- */
+.cat-btn {
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, .08);
+  background: rgba(255, 255, 255, .58);
+  padding: 12px 6px;
+  gap: 6px;
+  transition: background .16s, border-color .16s, box-shadow .16s, transform .12s;
+}
+.cat-btn:hover {
+  background: rgba(255, 255, 255, .92);
+  border-color: rgba(15, 23, 42, .14);
+  box-shadow: 0 8px 18px rgba(2, 8, 23, .08);
+}
+.cat-btn.active {
+  border-color: rgba(47, 128, 237, .5);
+  background: linear-gradient(180deg, rgba(47, 128, 237, .18), rgba(63, 182, 255, .12));
+  color: #1b5fb8;
+  box-shadow: 0 10px 22px rgba(47, 128, 237, .18), inset 0 1px 0 rgba(255, 255, 255, .6);
+}
+.cat-ico { font-size: 20px; }
+
+/* ---------- 分段控件 ---------- */
+.tabs { background: rgba(15, 23, 42, .06); border-radius: 13px; }
+.tab { border-radius: 10px; font-weight: 500; }
+.tab.active {
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 2px 8px rgba(2, 8, 23, .10), inset 0 1px 0 #fff;
+}
+
+/* ---------- 进度条 ---------- */
+.progress { background: rgba(15, 23, 42, .09); border-radius: 999px; }
+.progress-bar { background: linear-gradient(90deg, var(--sky), var(--primary)); }
+.progress-bar.warn { background: linear-gradient(90deg, #ffd479, #f59e0b); }
+.progress-bar.danger { background: linear-gradient(90deg, #ffa176, #e2562a); }
+
+/* ---------- 弹窗 ---------- */
+.modal-mask {
+  background: rgba(6, 12, 26, .52);
+  backdrop-filter: blur(16px) saturate(120%);
+  -webkit-backdrop-filter: blur(16px) saturate(120%);
+}
+.modal {
+  background: rgba(255, 255, 255, .90);
+  backdrop-filter: blur(44px) saturate(180%);
+  -webkit-backdrop-filter: blur(44px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, .70);
+  border-radius: 26px;
+  box-shadow: var(--shadow-lg);
+}
+.modal-head { border-bottom-color: rgba(15, 23, 42, .08); }
+.modal-foot { border-top-color: rgba(15, 23, 42, .08); }
+.modal-title { font-weight: 600; }
+
+/* ---------- 提示 ---------- */
+.toast {
+  background: rgba(10, 18, 34, .90);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, .14);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(2, 8, 23, .40);
+}
+
+/* ---------- 列表 ---------- */
+.list-row { border-bottom-color: rgba(15, 23, 42, .07); }
+.row-ico {
+  background: rgba(15, 23, 42, .055);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6);
+}
+.row-amount { font-variant-numeric: tabular-nums; }
+.list-row-btn { border-bottom-color: rgba(15, 23, 42, .07); }
+.list-row-btn:hover { background: rgba(255, 255, 255, .58); }
+
+/* ---------- 表格 ---------- */
+.table th {
+  border-bottom-color: rgba(15, 23, 42, .12);
+  font-weight: 500;
+  letter-spacing: .03em;
+}
+.table td { border-bottom-color: rgba(15, 23, 42, .06); }
+.rank-table tr.rank-row:hover { background: rgba(255, 255, 255, .6); }
+
+/* ---------- 统计卡 ---------- */
+.stat {
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 22px;
+}
+.stat-label { font-size: 12px; color: var(--muted); letter-spacing: .05em; }
+.stat-value { font-size: 27px; font-weight: 300; letter-spacing: -.8px; }
+.stat-delta { font-size: 12px; }
+
+/* ---------- 账户卡 ---------- */
+.account-card {
+  background: var(--glass);
+  backdrop-filter: var(--blur);
+  -webkit-backdrop-filter: var(--blur);
+  border: 1px solid var(--glass-line);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  padding: 15px 17px;
+  transition: transform .16s ease, box-shadow .16s ease, background .16s;
+}
+.account-card:hover {
+  background: rgba(255, 255, 255, .86);
+  transform: translateY(-2px);
+  box-shadow: 0 24px 56px rgba(2, 8, 23, .38), 0 2px 6px rgba(2, 8, 23, .2);
+}
+.account-name { font-size: 12px; color: var(--muted); letter-spacing: .03em; }
+.account-balance { font-size: 21px; font-weight: 300; letter-spacing: -.4px; }
+
+/* ---------- 概览 ---------- */
+.overview-row { font-size: 13.5px; }
+.overview-row strong { font-weight: 500; }
+.budget-mini { border-top-color: rgba(15, 23, 42, .08); }
+.overspend-hint {
+  background: var(--expense-soft);
+  color: #9c3d14;
+  border: 1px solid rgba(212, 83, 31, .18);
+  border-radius: 12px;
+}
+.today-line { border-top-color: rgba(15, 23, 42, .08); color: var(--text-2); }
+
+/* ---------- 筛选 ---------- */
+.filter-card { padding: 14px 16px; }
+.dd-btn {
+  background: rgba(255, 255, 255, .66);
+  border: 1px solid rgba(15, 23, 42, .10);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7);
+}
+.dd-body {
+  background: rgba(255, 255, 255, .95);
+  backdrop-filter: blur(26px) saturate(170%);
+  -webkit-backdrop-filter: blur(26px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, .85);
+  border-radius: 16px;
+  box-shadow: var(--shadow-lg);
+}
+.dd-item:hover { background: rgba(47, 128, 237, .09); }
+.filter-summary { color: var(--text-2); }
+
+/* ---------- 账单 ---------- */
+.bill-group-card { padding: 6px 16px; }
+.bill-row { border-bottom-color: rgba(15, 23, 42, .06); }
+.bill-row:hover { background: rgba(255, 255, 255, .55); }
+.bill-group-head { color: var(--muted); }
+.bill-note { color: var(--muted); }
+
+/* ---------- 图表 ---------- */
+.chart-card { min-height: 260px; }
+.grid-line { stroke: rgba(15, 23, 42, .09); }
+.axis-label { fill: var(--muted); }
+.line-path { stroke: var(--primary); stroke-width: 2.2; }
+.line-area { fill: rgba(47, 128, 237, .13); }
+.cursor-line { stroke: rgba(15, 23, 42, .22); }
+.cursor-dot { fill: var(--primary); stroke: #fff; }
+.chart-tip {
+  background: rgba(10, 18, 34, .92);
+  border-radius: 10px;
+  box-shadow: 0 10px 24px rgba(2, 8, 23, .35);
+}
+.legend-item:hover { background: rgba(255, 255, 255, .62); }
+.legend-dot { box-shadow: 0 0 0 3px rgba(255, 255, 255, .55); }
+.pie-center-value { font-weight: 600; }
+
+/* ---------- 分类页 ---------- */
+.cat-row { border-bottom-color: rgba(15, 23, 42, .06); }
+.cat-row.child { background: rgba(255, 255, 255, .34); }
+.cat-row:hover { background: rgba(255, 255, 255, .58); }
+.cat-ico { border-radius: 10px; background: rgba(15, 23, 42, .05); }
+.cat-meta { color: var(--muted); }
+.icon-pick {
+  background: rgba(255, 255, 255, .72);
+  border: 1px solid rgba(15, 23, 42, .08);
+  border-radius: 11px;
+}
+.icon-pick.active { border-color: rgba(47, 128, 237, .55); background: rgba(47, 128, 237, .14); }
+
+/* ---------- 设置 ---------- */
+.settings-section { padding: 22px 24px; }
+.info-row { color: var(--text-2); }
+.info-row .path { background: rgba(15, 23, 42, .06); padding: 2px 8px; border-radius: 7px; }
+.pref-row { border-bottom-color: rgba(15, 23, 42, .06); }
+.tag-input { background: rgba(255, 255, 255, .64); }
+
+/* ---------- 预算 ---------- */
+.budget-total-line strong { font-size: 27px; font-weight: 300; letter-spacing: -.8px; }
+.budget-bar { height: 10px; }
+.budget-row { border-bottom-color: rgba(15, 23, 42, .06); }
+.budget-row-nums { font-weight: 500; }
+.budget-input { background: rgba(255, 255, 255, .85); }
+.alert {
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(245, 158, 11, .26);
+  border-radius: 16px;
+}
+.alert-warn { background: rgba(255, 214, 153, .55); color: #7c3f06; }
+.alert-danger { background: rgba(255, 168, 140, .5); color: #8f2f0c; }
+
+/* ---------- 滚动条 ---------- */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, .22);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, .34); background-clip: padding-box; }
+
+/* ---------- 修正：列表主信息纵向排列 ---------- */
+.row-main { display: flex; flex-direction: column; gap: 1px; }
+
+/* ---------- 修正：位于渐变背景上的文字改用浅色 ---------- */
+.bill-group-head { color: rgba(255, 255, 255, .66); }
+.bill-date { color: rgba(255, 255, 255, .80); }
+.filter-summary { color: rgba(255, 255, 255, .78); }
+.filter-summary .muted { color: rgba(255, 255, 255, .60); }
+
+/* ---------- 侧边栏线性图标 ---------- */
+.nav-ico svg { width: 18px; height: 18px; display: block; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- 修正：卡片外的说明文字在深色背景上要用浅色 ---------- */
+.cat-card + .card-sub { color: rgba(255, 255, 255, .62); }

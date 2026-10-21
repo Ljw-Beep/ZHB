@@ -227,19 +227,36 @@ try {
   $p2 = Get-Text '/api/ping' | ConvertFrom-Json
   Assert '重启后 rev 持久化' ($p2.rev -ge 4) "实际 $($p2.rev)"
 
-  Write-Host "== 9. 单实例保护 =="
-  $tmp2 = Join-Path $env:TEMP ("ledger-single-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
-  New-Item -ItemType Directory -Force -Path $tmp2 | Out-Null
+  Write-Host "== 9. 单实例保护（同一数据目录只允许一个服务）=="
   $sw = [Diagnostics.Stopwatch]::StartNew()
-  $second = Start-Process -FilePath "$PSHOME\powershell.exe" -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $serverScript, '-Port', "$port", '-DataDir', $tmp2, '-NoBrowser') -PassThru -WindowStyle Hidden
+  $second = Start-Process -FilePath "$PSHOME\powershell.exe" -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $serverScript, '-Port', "$port", '-DataDir', $tmp, '-NoBrowser') -PassThru -WindowStyle Hidden
   $exited = $second.WaitForExit(15000)
   $sw.Stop()
-  Assert '第二个实例会检测到已有服务并退出' ($exited -and $second.ExitCode -eq 0) "exited=$exited code=$($second.ExitCode)"
+  Assert '同一数据目录的第二个实例会退出' ($exited -and $second.ExitCode -eq 0) "exited=$exited code=$($second.ExitCode)"
   if (-not $exited) { Stop-Process -Id $second.Id -Force -ErrorAction SilentlyContinue }
   Assert '单实例检测耗时 < 10 秒' ($sw.Elapsed.TotalSeconds -lt 10) ("实际 " + $sw.Elapsed.TotalSeconds.ToString('0.0') + " 秒")
   Assert '原服务仍在运行' ((Get-Text '/api/ping' | ConvertFrom-Json).app -eq 'ledger')
-  Assert '第二个实例没有写入自己的数据目录' (-not (Test-Path (Join-Path $tmp2 'ledger.json')))
-  Remove-Item $tmp2 -Recurse -Force -ErrorAction SilentlyContinue
+  $listenPorts = @(Get-NetTCPConnection -State Listen -ErrorAction SilentlyContinue | Where-Object { $_.LocalPort -ge 8611 -and $_.LocalPort -le 8620 })
+  Assert '没有产生重复端口上的服务' ($listenPorts.Count -le 1) ("实际监听 $($listenPorts.Count) 个")
+
+  Write-Host "== 10. 不同数据目录可并行（测试隔离）=="
+  $tmp3 = Join-Path $env:TEMP ("ledger-iso-" + [guid]::NewGuid().ToString('N').Substring(0, 8))
+  New-Item -ItemType Directory -Force -Path $tmp3 | Out-Null
+  $port3 = 0
+  for ($pp = 8800; $pp -le 8849; $pp++) {
+    try { $l = New-Object System.Net.Sockets.TcpListener([Net.IPAddress]::Loopback, $pp); $l.Start(); $l.Stop(); $port3 = $pp; break } catch { }
+  }
+  if ($port3 -eq 0) { throw '找不到第三个测试端口' }
+  $third = Start-Process -FilePath "$PSHOME\powershell.exe" -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $serverScript, '-Port', "$port3", '-DataDir', $tmp3, '-NoBrowser') -PassThru -WindowStyle Hidden
+  $up3 = $false
+  for ($i = 0; $i -lt 50; $i++) {
+    Start-Sleep -Milliseconds 200
+    try { $null = Invoke-WebRequest "http://127.0.0.1:$port3/api/ping" -UseBasicParsing -TimeoutSec 1; $up3 = $true; break } catch { }
+  }
+  Assert '不同数据目录可以独立启动' $up3
+  if (-not $third.HasExited) { Stop-Process -Id $third.Id -Force -ErrorAction SilentlyContinue }
+  Start-Sleep -Milliseconds 300
+  Remove-Item $tmp3 -Recurse -Force -ErrorAction SilentlyContinue
 
 } finally {
   Stop-Server $proc

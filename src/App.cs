@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -35,6 +36,7 @@ namespace LedgerApp
         static int port = 8611;
         static bool headless;
         static volatile bool stopping;
+        static Mutex instanceMutex;
         static bool noBrowser;
         static int startPort = 8611;
 
@@ -76,6 +78,30 @@ namespace LedgerApp
             dataFile = Path.Combine(dataDir, "ledger.json");
             backupDir = Path.Combine(dataDir, "backup");
             metaFile = Path.Combine(dataDir, "meta.json");
+
+            bool isFirstInstance = false;
+            try
+            {
+                instanceMutex = new Mutex(false, DataMutexName());
+                isFirstInstance = instanceMutex.WaitOne(0);
+            }
+            catch { isFirstInstance = true; }
+
+            if (!isFirstInstance)
+            {
+                int waitCandidate;
+                for (int i = 0; i < 20; i++)
+                {
+                    int running = FindExistingInstance(out waitCandidate);
+                    if (running > 0)
+                    {
+                        if (!headless && !noBrowser) OpenBrowser(running);
+                        return;
+                    }
+                    Thread.Sleep(250);
+                }
+                return;
+            }
 
             int candidate;
             int existing = FindExistingInstance(out candidate);
@@ -839,6 +865,18 @@ namespace LedgerApp
         }
 
         // ======================= 单实例 / 端口 =======================
+        static string DataMutexName()
+        {
+            string key = Path.GetFullPath(dataDir).TrimEnd('\\').ToLowerInvariant();
+            using (var md5 = MD5.Create())
+            {
+                byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(key));
+                var sb = new StringBuilder("LedgerApp.");
+                for (int i = 0; i < 8; i++) sb.Append(hash[i].ToString("x2"));
+                return sb.ToString();
+            }
+        }
+
         static bool IsBindable(int p)
         {
             try
