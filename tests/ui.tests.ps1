@@ -226,6 +226,19 @@ try {
       $efails | ForEach-Object { Write-Host "      失败：$_" -ForegroundColor Yellow }
     }
   }
+  Write-Host "== 1k. 静态部署模式（无后端）=="
+  $staticDom = Get-Dom "$base/tests/static.html"
+  $stm2 = [regex]::Match($staticDom, 'STATIC PASS (\d+) FAIL (\d+)')
+  Assert '静态模式测试可执行' $stm2.Success
+  if ($stm2.Success) {
+    $stpass = [int]$stm2.Groups[1].Value
+    $stfail = [int]$stm2.Groups[2].Value
+    Assert "静态模式全部通过（PASS $stpass / FAIL $stfail）" ($stfail -eq 0 -and $stpass -ge 9) "通过 $stpass 失败 $stfail"
+    if ($stfail -gt 0) {
+      $stfails = [regex]::Matches($staticDom, '<li class="fail">([^<]+)</li>') | ForEach-Object { $_.Groups[1].Value }
+      $stfails | ForEach-Object { Write-Host "      失败：$_" -ForegroundColor Yellow }
+    }
+  }
   Write-Host "== 2. 首页骨架 =="
   $homeDom = Get-Dom "$base/#/home"
   Assert '首页渲染' ($homeDom -match 'data-page="home"')

@@ -488,6 +488,7 @@ function Handle-Request {
     $last = ''
     if ($files.Count -gt 0) { $last = $files[0].LastWriteTime.ToString('yyyy-MM-dd HH:mm:ss') }
     $info = [ordered]@{
+      mode        = 'server'
       dataFile    = $DataFile
       backupDir   = $BackupDir
       backupCount = $files.Count

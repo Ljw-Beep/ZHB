@@ -4,6 +4,7 @@ import * as S from '../js/selectors.js';
 import { validateEntry, makeTransaction, applyTransaction, validateBackup } from '../js/models.js';
 import { computePie, arcPath, niceMax, buildLinePoints } from '../js/charts.js';
 import { reorderWithinSiblings, moveToParent } from '../js/categoryOrder.js';
+import { buildCsv } from '../js/csv.js';
 
 const list = [];
 let passed = 0;
@@ -365,6 +366,46 @@ test('每日收支汇总：每天分开统计', () => {
   eq(d[16].expense, 620, '10 月 17 日支出');
   eq(d[4].expense, 0, '转账不计入');
   eq(d[17].count, 1);
+});
+
+// ---------------- CSV（静态模式导出） ----------------
+test('CSV：表头与行格式', () => {
+  const csv = buildCsv(fixture, { month: '2026-10' });
+  const lines = csv.trim().split('\r\n');
+  eq(lines[0], '日期,类型,金额,一级分类,二级分类,账户,标签,备注');
+  const row = lines.find((l) => l.includes('28.00'));
+  ok(row, '找不到 28.00 这一行');
+  ok(row.startsWith('2026-10-18,支出,28.00,餐饮,午饭,微信'), row);
+  ok(row.includes('朋友'), '标签缺失');
+  ok(row.includes('和同事吃饭'), '备注缺失');
+});
+
+test('CSV：按月份过滤', () => {
+  const csv = buildCsv(fixture, { month: '2026-09' });
+  const lines = csv.trim().split('\r\n');
+  eq(lines.length, 2, '应只有表头 + 1 行');
+  ok(lines[1].includes('上月'), lines[1]);
+});
+
+test('CSV：含逗号引号的字段会转义', () => {
+  const s = {
+    accounts: [{ id: 'a1', name: '微信' }],
+    categories: [{ id: 'c1', name: '餐饮' }],
+    tags: [],
+    transactions: [{ id: 't', kind: 'expense', amount: 100, accountId: 'a1', categoryId: 'c1', date: '2026-10-01', note: '带,逗号"引号', tagIds: [] }]
+  };
+  const csv = buildCsv(s, { all: true });
+  ok(csv.includes('"带,逗号""引号"'), csv);
+});
+
+test('CSV：转账不写分类、账户写成 A → B', () => {
+  const s = {
+    accounts: [{ id: 'a1', name: '微信' }, { id: 'a2', name: '银行卡' }],
+    categories: [], tags: [],
+    transactions: [{ id: 't', kind: 'transfer', amount: 5000, accountId: 'a1', toAccountId: 'a2', categoryId: null, date: '2026-10-01', note: '', tagIds: [] }]
+  };
+  const csv = buildCsv(s, { all: true });
+  ok(csv.includes('转账,50.00,,,微信 → 银行卡'), csv);
 });
 // ---------------- 输出 ----------------
 const summary = document.getElementById('summary');

@@ -19,6 +19,7 @@ const MONTH_PAGES = new Set(['home', 'stats', 'budget']);
 let uiMonth = monthKey();
 let unmount = null;
 let booted = false;
+let localNotified = false;
 
 function currentRoute() {
   const raw = location.hash.replace(/^#\/?/, '').split('?')[0];
@@ -129,8 +130,12 @@ function showOffline(show) {
 async function boot(force = false) {
   if (booted && !force) return;
   try {
-    await api.ping();
+    const mode = await api.init();
     await store.load();
+    if (mode === 'local' && !localNotified) {
+      localNotified = true;
+      toast('网页模式：数据保存在本机浏览器，记得导出备份', 'warn', 5000);
+    }
   } catch (err) {
     console.error(err);
     showOffline(true);

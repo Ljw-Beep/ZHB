@@ -2,6 +2,40 @@
 
 一个只在本机浏览器里运行的个人记账工具。不需要联网、不需要注册、不依赖任何云服务，数据存在你自己的电脑上。
 
+## 两种运行方式
+
+| 方式 | 数据存哪 | 适合 |
+|---|---|---|
+| **桌面版**（双击 `记账本.exe` 或 `启动记账.bat`） | 电脑上的 `data\ledger.json`，自动备份 | 自己长期使用 |
+| **网页版**（GitHub Pages 等静态托管） | 浏览器 localStorage | 随时随地打开、分享给别人用 |
+
+前端会**自动判断**：能连上 `/api` 就用本地文件存储，连不上就切换到浏览器存储，代码是同一套。
+
+## 部署到 GitHub Pages（网页版）
+
+1. 构建静态站点（把 `app/` 复制到 `docs/`）：
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File tools\build-pages.ps1
+   ```
+
+2. 提交并推送：
+
+   ```bash
+   git add .
+   git commit -m "build: GitHub Pages"
+   git push
+   ```
+
+3. 打开仓库 **Settings → Pages**：
+   - Source 选 **Deploy from a branch**
+   - Branch 选 **main**，目录选 **/docs**
+   - 保存，等 1 分钟左右
+
+4. 访问 `https://<你的用户名>.github.io/<仓库名>/`
+
+> 网页版的数据保存在**每个访客自己的浏览器**里，互不相通，也传不到你这里。
+> 换浏览器、清空缓存、换设备都会看不到原来的数据，所以网页版请定期用「设置 → 导出 JSON 备份」保存到电脑上，换设备时再导入。
 ## 界面风格
 
 macOS 天气 App 风格的磨砂玻璃界面：深海蓝到暮紫的渐变背景、24px 大圆角的半透明卡片、背景模糊、细颗粒噪点、轻量大号数字与细线图标。日落橙表示支出，天空蓝表示收入。

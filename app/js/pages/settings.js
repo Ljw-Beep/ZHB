@@ -333,19 +333,23 @@ export function mount(root, ctx) {
         el('span', { text: info ? (info.backupCount + ' 份' + (info.lastBackup ? '，最近 ' + info.lastBackup : '')) : '—' })
       ),
       el('div', { class: 'btn-row' },
-        el('button', { class: 'btn btn-primary', type: 'button', onclick: () => download(api.exportJsonUrl()) }, '导出 JSON 备份'),
+        el('button', { class: 'btn btn-primary', type: 'button', onclick: () => api.downloadExport('json') }, '导出 JSON 备份'),
         el('button', { class: 'btn', type: 'button', onclick: () => fileInput.click() }, '从备份导入'),
         csvSelect,
         el('button', {
           class: 'btn', type: 'button',
           onclick: () => {
             const v = csvSelect.value;
-            download(v === 'all' ? api.exportCsvUrl({ all: '1' }) : api.exportCsvUrl({ month: v }));
+            api.downloadExport('csv', v === 'all' ? { all: '1' } : { month: v });
           }
         }, '导出 CSV')
       ),
       fileInput,
-      el('p', { class: 'card-sub', text: '导入会覆盖当前全部数据，导入前会自动备份一份；CSV 用 Excel 可直接打开。' })
+      el('p', { class: 'card-sub', text: '导入会覆盖当前全部数据，导入前会自动备份一份；CSV 用 Excel 可直接打开。' }),
+      info && info.mode === 'local'
+        ? el('p', { class: 'card-sub', style: 'color: var(--warn)' },
+            '当前是网页模式：数据保存在这个浏览器里，清理浏览器数据会丢失，建议定期「导出 JSON 备份」到电脑上。')
+        : null
     );
   }
 
